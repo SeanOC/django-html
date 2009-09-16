@@ -11,18 +11,8 @@
 """
 import re
 
-doctypes = {
-  'html4': """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-    "http://www.w3.org/TR/html4/strict.dtd">""",
-  'html4trans': """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-    "http://www.w3.org/TR/html4/loose.dtd">""",
-  'xhtml1': """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">""",
-  'xhtml1trans': """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">""",
-  'html5': '<!DOCTYPE html>',
-}
-html_doctypes = ('html4', 'html5', 'html4trans')
+from django_html.enums import doctypes, html_doctypes
+from django_html.utils import clean_html
 
 from django import template
 register = template.Library()
@@ -65,7 +55,6 @@ class DoctypeNode(template.Node):
 
 register.tag('doctype', do_doctype)
 
-xhtml_end_re = re.compile('\s*/>')
 
 class FieldNode(template.Node):
     def __init__(self, field_var, extra_attrs):
@@ -91,9 +80,7 @@ class FieldNode(template.Node):
         html = widget.render(field.html_name, data, attrs=attrs)
         # Finally, if we're NOT in xhtml mode ensure no '/>'
         doctype = getattr(context, '_doctype', 'xhtml1')
-        if doctype in html_doctypes:
-            html = xhtml_end_re.sub('>', html)
-        return html
+        return clean_html(html, doctype)
 
 def do_field(parser, token):
     # Can't use split_contents here as we need to process 'class="foo"' etc
