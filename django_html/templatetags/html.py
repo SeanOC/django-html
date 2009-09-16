@@ -15,22 +15,32 @@ from django_html.enums import doctypes, html_doctypes
 from django_html.utils import clean_html
 
 from django import template
+from django.conf import settings
+
 register = template.Library()
 
 def do_doctype(parser, token):
     bits = token.split_contents()
-    if len(bits) not in (2, 3):
+    settings_doctype = getattr(settings, 'DOCTYPE', None)
+    if len(bits) not in (1, 2, 3):
         raise template.TemplateSyntaxError, \
             "%r tag requires 1-2 arguments" % bits[0]
+    if settings_doctype is None and len(bits) == 1:
+        raise template.TemplateSyntaxError, \
+            "%r DOCTYPE must be in settings or passed as an argument." \
+                % bits[0]
     if len(bits) == 3 and bits[2] != 'silent':
         raise template.TemplateSyntaxError, \
             "If provided, %r tag second argument must be 'silent'" % bits[0]
     # If doctype is wrapped in quotes, they should balance
-    doctype = bits[1]
+    if len(bits) == 1:
+        doctype = settings_doctype
+    else:
+        doctype = bits[1]
     if doctype[0] in ('"', "'") and doctype[-1] != doctype[0]:
         raise template.TemplateSyntaxError, \
             "%r tag quotes need to balance" % bits[0]
-    return DoctypeNode(bits[1], is_silent = (len(bits) == 3))
+    return DoctypeNode(doctype, is_silent = (len(bits) == 3))
 
 class DoctypeNode(template.Node):
     def __init__(self, doctype, is_silent=False):
