@@ -1,6 +1,8 @@
 from django import template
 from django import forms
+from django.http import HttpRequest, HttpResponse
 from templatetags.html import doctypes, html_doctypes
+from middleware import HTMLFixMiddleware
 import unittest
 
 class TemplateTestHelper(unittest.TestCase):
@@ -131,3 +133,49 @@ class FieldTest(TemplateTestHelper):
             {'form': MyForm()},
             {'name': 'select', 'class': 'foo', 'id': 'hi'}
         )
+
+xhtml_output = '''
+<html>
+    <body>
+        <form>
+            <input type="text" name="name" />
+            <input type="hidden" name="other" />
+        </form>
+    </body>
+</html>
+'''
+
+html_output = '''
+<html>
+    <body>
+        <form>
+            <input type="text" name="name">
+            <input type="hidden" name="other">
+        </form>
+    </body>
+</html>
+'''
+      
+class MiddlewareTest(unittest.TestCase):
+    def _get_request(self):
+        return HttpRequest()
+        
+    def _get_xhtml_response(TestCase):
+        return HttpResponse(content=xhtml_output)
+
+    def test_simple_xhtml2xhtml(self):
+        from django.conf import settings
+        settings.DOCTYPE = 'xhtml1'
+        request = self._get_request()
+        orig_response = self._get_xhtml_response()
+        processed_response = HTMLFixMiddleware().process_response(request, orig_response)
+        self.assertEqual(processed_response.content, xhtml_output)
+        
+    def test_simple_xhtml2html4(self):
+        from django.conf import settings
+        settings.DOCTYPE = 'html4'
+        request = self._get_request()
+        orig_response = self._get_xhtml_response()
+        processed_response = HTMLFixMiddleware().process_response(request, orig_response)
+        self.assertEqual(processed_response.content, html_output)
+        
