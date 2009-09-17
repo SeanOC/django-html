@@ -6,10 +6,12 @@ This package represents an experimental approach to improving the way Django
 outputs form widgets. At the moment, widgets created using `django.forms` are
 outputted as XHTML (with self closing `/>` tags) even if the rest of your site
 uses HTML. This package solves this problem by introducing two new template
-tags: `{% doctype %}` and `{% field %}`.
+tags: `{% doctype %}` and `{% field %}`.  Alternatively it also provides a middleware which strips out the self closing tags '/>'.  A middleware introduces more overhead than the `{% field %}` tags but it allows for handling of third party apps without modification.
 
 To install, place the `django_html` directory somewhere on your python path,
 then add `django_html` to `INSTALLED_APPS` in your `settings.py` file.
+
+To enable the middleware, follow the steps above and then add `'django_html.middleware.HTMLFixMiddleware'` to your `MIDDLEWARE_CLASSES` value in `settings.py`.  Finally add a line similar to `DOCTYPE = "html4"` to your `settings.py` file.  The `DOCTYPE` setting accepts any value which can be used in the `{% doctype %}` tag.
 
 See the following thread on django-developers for further background
 information:
@@ -35,6 +37,10 @@ If you just want to set the doctype without outputting it to the page you can
 use the optional "silent" argument::
 
 	{% doctype "html4" silent %}
+	
+If you have set the `DOCTYPE` settings variable, you can simply call the doctype tag with no arguement to output the doctype info to the page::
+
+    {% doctype %}
 
 {%_field_%}
 ===========
